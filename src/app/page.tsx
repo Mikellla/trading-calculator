@@ -20,8 +20,12 @@ function NumberField(props: {
   value: number;
   onChange: (v: number) => void;
   placeholder?: string;
+  step?: string;
+  min?: string;
+  max?: string;
+  inputMode?: "decimal" | "numeric";
 }) {
-  const { label, value, onChange, placeholder } = props;
+  const { label, value, onChange, placeholder, step, min, max, inputMode } = props;
 
   const [text, setText] = useState("");
   const isFocused = useRef(false);
@@ -38,7 +42,10 @@ function NumberField(props: {
 
       <input
         type="text"
-        inputMode="decimal"
+        inputMode={inputMode ?? "decimal"}
+        step={step}
+        min={min}
+        max={max}
         className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 outline-none focus:border-neutral-600 focus:ring-1 focus:ring-neutral-700"
         value={text}
         placeholder={placeholder}
@@ -53,6 +60,21 @@ function NumberField(props: {
           if (text.endsWith(".")) {
             const trimmed = text.slice(0, -1);
             setText(trimmed);
+            const n = Number(trimmed);
+            onChange(Number.isFinite(n) ? n : Number.NaN);
+            return;
+          }
+
+          // Apply min/max on blur (optional safety)
+          const n = Number(text);
+          if (Number.isFinite(n)) {
+            let clamped = n;
+            if (min !== undefined) clamped = Math.max(clamped, Number(min));
+            if (max !== undefined) clamped = Math.min(clamped, Number(max));
+            if (clamped !== n) {
+              setText(String(clamped));
+              onChange(clamped);
+            }
           }
         }}
         onChange={(e) => {
@@ -71,7 +93,7 @@ function NumberField(props: {
 
           setText(raw);
 
-          // If it's an incomplete number like "." or "-" or "2." -> keep numeric as current best effort
+          // If it's an incomplete number like "." or "-" or "2." -> keep numeric as NaN
           if (raw === "." || raw === "-" || raw === "+" || raw === "-." || raw === "+.") {
             onChange(Number.NaN);
             return;
