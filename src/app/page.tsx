@@ -1,5 +1,6 @@
 "use client";
 
+import { HelpIcon, HelpProvider } from "@/components/HelpTooltip";
 import PropFirmCalculator from "@/components/PropFirmCalculator";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -23,7 +24,10 @@ function NumberField(props: {
   min?: string;
   max?: string;
   inputMode?: "decimal" | "numeric";
+  help?: string;     // ✅ add
+  helpId?: string;   // ✅ add (unique per field)
 }) {
+
   const { label, value, onChange, placeholder, step, min, max, inputMode } = props;
 
   const [text, setText] = useState("");
@@ -37,7 +41,10 @@ function NumberField(props: {
 
   return (
     <label className="block">
-      <div className="mb-1 text-sm text-neutral-400">{label}</div>
+<div className="mb-1 flex items-center text-sm text-neutral-400">
+  <span>{label}</span>
+  {props.help ? <HelpIcon id={props.helpId ?? label} text={props.help} /> : null}
+</div>
 
       <input
         type="text"
@@ -322,6 +329,7 @@ export default function Page() {
   }, [liqSide, liqIsExample]);
 
   return (
+    <HelpProvider>
     <main className="min-h-dvh bg-neutral-950 p-6 text-neutral-100">
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -545,7 +553,13 @@ export default function Page() {
                   <h2 className="text-lg font-medium">Target average</h2>
 
                   <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <NumberField label="target avg price" value={targetAvg} onChange={setTargetAvg} />
+<NumberField
+  label="target avg price"
+  value={targetAvg}
+  onChange={setTargetAvg}
+  help="Desired average entry price after adding to the position."
+  helpId="crypto_target_avg"
+/>
                   </div>
 
                   <div className="mt-3 text-sm">
@@ -632,12 +646,15 @@ export default function Page() {
                   )}
                 </section>
               </>
+              
             )}
           </>
         ) : (
           <PropFirmCalculator />
+          
         )}
       </div>
     </main>
+       </HelpProvider>
   );
 }

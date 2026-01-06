@@ -1,5 +1,6 @@
 "use client";
 
+import { HelpIcon, HelpProvider } from "@/components/HelpTooltip";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { roundTo } from "@/lib/math/utils";
 import { qtyForTargetAvg } from "@/lib/math/trading";
@@ -47,7 +48,10 @@ function NumberField(props: {
   min?: string;
   max?: string;
   inputMode?: "decimal" | "numeric";
+  help?: string;     // ✅ add
+  helpId?: string;   // ✅ add (unique per field)
 }) {
+
   const { label, value, onChange, placeholder, step, min, max, inputMode } = props;
 
   const [text, setText] = useState("");
@@ -60,7 +64,10 @@ function NumberField(props: {
 
   return (
     <label className="block">
-      <div className="mb-1 text-sm text-neutral-400">{label}</div>
+<div className="mb-1 flex items-center text-sm text-neutral-400">
+  <span>{label}</span>
+  {props.help ? <HelpIcon id={props.helpId ?? label} text={props.help} /> : null}
+</div>
 
       <input
         type="text"
@@ -131,7 +138,7 @@ function SideToggle(props: { side: Side; setSide: (s: Side) => void }) {
   const inactive = "bg-neutral-900 text-neutral-200 hover:bg-neutral-800";
 
   return (
-    <div className="inline-flex overflow-hidden rounded-xl border border-neutral-800">
+        <div className="inline-flex overflow-hidden rounded-xl border border-neutral-800">
       <button type="button" className={`${base} ${side === "long" ? active : inactive}`} onClick={() => setSide("long")}>
         long
       </button>
@@ -429,7 +436,8 @@ export default function PropFirmCalculator() {
     setTargetAvg(5020);
   };
 
-  return (
+return (
+  <HelpProvider>
     <div className="space-y-6">
       {/* Header row like crypto avg-entry: title + side toggle */}
       <section className="rounded-2xl border p-4">
@@ -439,14 +447,22 @@ export default function PropFirmCalculator() {
             <div className="inline-flex overflow-hidden rounded-xl border border-neutral-800">
               <button
                 type="button"
-                className={`px-4 py-2 text-sm transition-colors ${mode === "futures" ? "bg-white text-black shadow-sm" : "bg-neutral-900 text-neutral-200 hover:bg-neutral-800"}`}
+                className={`px-4 py-2 text-sm transition-colors ${
+                  mode === "futures"
+                    ? "bg-white text-black shadow-sm"
+                    : "bg-neutral-900 text-neutral-200 hover:bg-neutral-800"
+                }`}
                 onClick={() => setMode("futures")}
               >
                 futures
               </button>
               <button
                 type="button"
-                className={`px-4 py-2 text-sm transition-colors ${mode === "forex" ? "bg-white text-black shadow-sm" : "bg-neutral-900 text-neutral-200 hover:bg-neutral-800"}`}
+                className={`px-4 py-2 text-sm transition-colors ${
+                  mode === "forex"
+                    ? "bg-white text-black shadow-sm"
+                    : "bg-neutral-900 text-neutral-200 hover:bg-neutral-800"
+                }`}
                 onClick={() => setMode("forex")}
               >
                 forex
@@ -480,7 +496,7 @@ export default function PropFirmCalculator() {
                 ) : (
                   <div className="rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-3">
                     <div className="text-sm text-neutral-400">forex</div>
-                    <div className="text-xs text-neutral-500 mt-1">
+                    <div className="mt-1 text-xs text-neutral-500">
                       pip value is manual for v1 (later we auto-calc from live price)
                     </div>
                   </div>
@@ -491,10 +507,15 @@ export default function PropFirmCalculator() {
                   <div className="text-sm text-neutral-400">
                     {mode === "futures" ? "point value ($/point)" : "$ per pip (per 1.0 lot)"}
                   </div>
+
                   <div className="mt-1 text-2xl font-semibold">
                     {mode === "futures"
-                      ? Number.isFinite(pointValueUsd) ? `$${roundTo(pointValueUsd, 4)}` : "—"
-                      : Number.isFinite(pipValueUsd) ? `$${roundTo(pipValueUsd, 4)}` : "—"}
+                      ? Number.isFinite(pointValueUsd)
+                        ? `$${roundTo(pointValueUsd, 4)}`
+                        : "—"
+                      : Number.isFinite(pipValueUsd)
+                        ? `$${roundTo(pipValueUsd, 4)}`
+                        : "—"}
                   </div>
 
                   {mode === "futures" ? (
@@ -503,6 +524,8 @@ export default function PropFirmCalculator() {
                         label="override point value (optional)"
                         value={pointValueOverride}
                         onChange={setPointValueOverride}
+                        help="Dollar value of a one-point price move per contract."
+                        helpId="prop_point_value"
                       />
 
                       {/* Less visible advanced tick inputs */}
@@ -510,16 +533,37 @@ export default function PropFirmCalculator() {
                         <summary className="cursor-pointer text-sm text-neutral-400 hover:text-neutral-200">
                           advanced (tick size / tick value)
                         </summary>
+
                         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          <NumberField label="tick size" value={tickSize} onChange={setTickSize} />
-                          <NumberField label="tick value ($)" value={tickValueUsd} onChange={setTickValueUsd} />
+                          <NumberField
+                            label="tick size"
+                            value={tickSize}
+                            onChange={setTickSize}
+                            help="Smallest possible price movement of the instrument."
+                            helpId="prop_tick_size"
+                          />
+                          <NumberField
+                            label="tick value ($)"
+                            value={tickValueUsd}
+                            onChange={setTickValueUsd}
+                            help="Dollar value of one tick movement per contract."
+                            helpId="prop_tick_value"
+                          />
                         </div>
                       </details>
                     </div>
                   ) : (
                     <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <NumberField label="pip size" value={pipSize} onChange={setPipSize} />
-                      <NumberField label="$ per pip (manual)" value={pipValueUsd} onChange={setPipValueUsd} />
+                      <NumberField
+                        label="pip size"
+                        value={pipSize}
+                        onChange={setPipSize}
+                      />
+                      <NumberField
+                        label="$ per pip (manual)"
+                        value={pipValueUsd}
+                        onChange={setPipValueUsd}
+                      />
                     </div>
                   )}
                 </div>
@@ -531,27 +575,51 @@ export default function PropFirmCalculator() {
                   label="remaining drawdown ($)"
                   value={remainingDrawdownUsd}
                   onChange={setRemainingDrawdownUsd}
+                  help="Maximum additional loss allowed before the account fails."
+                  helpId="prop_remaining_drawdown"
                 />
                 <NumberField
-                  label="daily loss remaining ($) (optional)"
+                  label="daily loss remaining ($)"
                   value={dailyLossRemainingUsd}
                   onChange={setDailyLossRemainingUsd}
+                  help="Maximum loss allowed for the current trading day."
+                  helpId="prop_daily_loss_remaining"
                 />
 
-                <NumberField label="stop loss price" value={stopPrice} onChange={setStopPrice} />
-                <NumberField label="market price" value={marketPrice} onChange={setMarketPrice} />
+                <NumberField
+                  label="stop loss price"
+                  value={stopPrice}
+                  onChange={setStopPrice}
+                  help="Price where the position would be closed to limit loss."
+                  helpId="prop_stop_price"
+                />
+                <NumberField
+                  label="market price"
+                  value={marketPrice}
+                  onChange={setMarketPrice}
+                  help="Current price where an additional order would be executed."
+                  helpId="prop_market_price"
+                />
               </div>
 
               {/* Avg-entry inputs (exact same pattern as crypto) */}
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <NumberField label="initial entry price" value={leg1Price} onChange={setLeg1Price} />
+                <NumberField
+                  label="initial entry price"
+                  value={leg1Price}
+                  onChange={setLeg1Price}
+                />
                 <NumberField
                   label={mode === "futures" ? "initial qty (contracts)" : "initial qty (lots)"}
                   value={leg1Qty}
                   onChange={setLeg1Qty}
                 />
 
-                <NumberField label="added entry price" value={leg2Price} onChange={setLeg2Price} />
+                <NumberField
+                  label="added entry price"
+                  value={leg2Price}
+                  onChange={setLeg2Price}
+                />
                 <NumberField
                   label={mode === "futures" ? "added qty (contracts)" : "added qty (lots)"}
                   value={leg2Qty}
@@ -599,14 +667,10 @@ export default function PropFirmCalculator() {
             <div className="text-right">{roundTo(avg.avgPrice, 8)}</div>
 
             <div>account breach price (estimate)</div>
-            <div className="text-right">
-              {breach ? roundTo(breach.breach, 8) : "—"}
-            </div>
+            <div className="text-right">{breach ? roundTo(breach.breach, 8) : "—"}</div>
 
             <div>risk to stop ($)</div>
-            <div className="text-right">
-              {riskToStop !== null ? roundTo(riskToStop, 2) : "—"}
-            </div>
+            <div className="text-right">{riskToStop !== null ? roundTo(riskToStop, 2) : "—"}</div>
 
             <div className="col-span-2 text-xs text-neutral-500">
               breach price is the level where you hit remaining drawdown (prop “liquidation”).
@@ -617,11 +681,9 @@ export default function PropFirmCalculator() {
 
       {/* PnL comparison card (same as crypto) */}
       <section className="rounded-2xl border p-4">
-        <div className="flex items-center justify-between"></div>
+        <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium">PnL comparison</h2>
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium">PnL comparison</h2>
-          </div>
+        </div>
 
         {!comparison ? (
           <p className="mt-2 text-sm text-red-600">
@@ -654,7 +716,13 @@ export default function PropFirmCalculator() {
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <NumberField label="target avg price" value={targetAvg} onChange={setTargetAvg} />
+          <NumberField
+            label="target avg price"
+            value={targetAvg}
+            onChange={setTargetAvg}
+            help="Desired average entry price after adding to the position."
+            helpId="prop_target_avg"
+          />
         </div>
 
         <div className="mt-3 text-sm">
@@ -672,5 +740,7 @@ export default function PropFirmCalculator() {
         </p>
       </section>
     </div>
-  );
+  </HelpProvider>
+);
 }
+
